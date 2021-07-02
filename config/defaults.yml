@@ -4,6 +4,11 @@ arguments:
   - name: "env"
     help: "Configuration related to simulation environments."
     properties:
+      - name: "highway"
+        help: "Highway environment configuration."
+        properties:
+          - name: "d_min"
+            default: 0.15
       - name: "spaceship"
         help: "Spaceship environment configuration."
         properties:
@@ -49,7 +54,7 @@ arguments:
           - name: "enable_reward_shaping"
             default: false
           - name: "reward_shaping_slack"
-            default: 0.1          
+            default: 0.1
   - name: "ddpg"
     help: "Hyperparameters for DDPG algorithm."
     properties:

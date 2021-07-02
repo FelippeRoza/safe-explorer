@@ -47,7 +47,8 @@ class SafetyLayer:
         for_each(lambda x: x.train(), self._models)
 
     def _initialize_constraint_models(self):
-        self._models = [ConstraintModel(self._env.observation_space["agent_position"].shape[0],
+
+        self._models = [ConstraintModel(self._env.observation_space.shape[0],
                                         self._env.action_space.shape[0]) \
                         for _ in range(self._num_constraints)]
         self._optimizers = [Adam(x.parameters(), lr=self._config.lr) for x in self._models]
@@ -57,22 +58,24 @@ class SafetyLayer:
 
         observation = self._env.reset()
 
-        for step in range(num_steps):            
+        for step in range(num_steps):
             action = self._env.action_space.sample()
+            action[1] = 0.0
             c = self._env.get_constraint_values()
             observation_next, _, done, _ = self._env.step(action)
+            # self._env.render()
             c_next = self._env.get_constraint_values()
 
             self._replay_buffer.add({
                 "action": action,
-                "observation": observation["agent_position"],
+                "observation": observation,
                 "c": c,
-                "c_next": c_next 
+                "c_next": c_next
             })
-            
-            observation = observation_next            
+
+            observation = observation_next
             episode_length += 1
-            
+
             if done or (episode_length == self._config.max_episode_length):
                 observation = self._env.reset()
                 episode_length = 0
@@ -82,14 +85,14 @@ class SafetyLayer:
         action = self._as_tensor(batch["action"])
         c = self._as_tensor(batch["c"])
         c_next = self._as_tensor(batch["c_next"])
-        
+
         gs = [x(observation) for x in self._models]
 
         c_next_predicted = [c[:, i] + \
                             torch.bmm(x.view(x.shape[0], 1, -1), action.view(action.shape[0], -1, 1)).view(-1) \
                             for i, x in enumerate(gs)]
         losses = [torch.mean((c_next[:, i] - c_next_predicted[i]) ** 2) for i in range(self._num_constraints)]
-        
+
         return losses
 
     def _update_batch(self, batch):
@@ -124,7 +127,7 @@ class SafetyLayer:
 
         print(f"Validation completed, average loss {losses}")
 
-    def get_safe_action(self, observation, action, c):    
+    def get_safe_action(self, observation, action, c):
         # Find the values of G
         self._eval_mode()
         g = [x(self._as_tensor(observation["agent_position"]).view(1, -1)) for x in self._models]
@@ -148,7 +151,7 @@ class SafetyLayer:
 
         print("==========================================================")
         print("Initializing constraint model training...")
-        print("----------------------------------------------------------")        
+        print("----------------------------------------------------------")
         print(f"Start time: {datetime.fromtimestamp(start_time)}")
         print("==========================================================")
 
@@ -158,7 +161,7 @@ class SafetyLayer:
         for epoch in range(self._config.epochs):
             # Just sample episodes for the whole epoch
             self._sample_steps(self._config.steps_per_epoch)
-            
+
             # Do the update from memory
             losses = np.mean(np.concatenate([self._update_batch(batch) for batch in \
                     self._replay_buffer.get_sequential(self._config.batch_size)]).reshape(-1, self._num_constraints), axis=0)
@@ -170,7 +173,7 @@ class SafetyLayer:
                      enumerate(losses))
 
             (seq(self._models)
-                    .zip_with_index() # (model, index) 
+                    .zip_with_index() # (model, index)
                     .map(lambda x: (f"constraint_model_{x[1]}", x[0])) # (model_name, model)
                     .flat_map(lambda x: [(x[0], y) for y in x[1].named_parameters()]) # (model_name, (param_name, param_data))
                     .map(lambda x: (f"{x[0]}_{x[1][0]}", x[1][1])) # (modified_param_name, param_data)
@@ -183,7 +186,7 @@ class SafetyLayer:
             print(f"Finished epoch {epoch} with losses: {losses}. Running validation ...")
             self.evaluate()
             print("----------------------------------------------------------")
-        
+
         self._writer.close()
         print("==========================================================")
         print(f"Finished training constraint model. Time spent: {(time.time() - start_time) // 1} secs")

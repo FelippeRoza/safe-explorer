@@ -4,6 +4,7 @@ import torch
 
 from safe_explorer.core.config import Config
 from safe_explorer.env.ballnd import BallND
+from safe_explorer.env.highway import Highway
 from safe_explorer.env.spaceship import Spaceship
 from safe_explorer.ddpg.actor import Actor
 from safe_explorer.ddpg.critic import Critic
@@ -23,13 +24,13 @@ class Trainer:
     def _print_ascii_art(self):
         print(
         """
-          _________       _____        ___________              .__                              
-         /   _____/____ _/ ____\____   \_   _____/__  _________ |  |   ___________   ___________ 
+          _________       _____        ___________              .__
+         /   _____/____ _/ ____\____   \_   _____/__  _________ |  |   ___________   ___________
          \_____  \\__  \\   __\/ __ \   |    __)_\  \/  /\____ \|  |  /  _ \_  __ \_/ __ \_  __ \\
          /        \/ __ \|  | \  ___/   |        \>    < |  |_> >  |_(  <_> )  | \/\  ___/|  | \/
-        /_______  (____  /__|  \___  > /_______  /__/\_ \|   __/|____/\____/|__|    \___  >__|   
-                \/     \/          \/          \/      \/|__|                           \/    
-        """)                                                                                                                  
+        /_______  (____  /__|  \___  > /_______  /__/\_ \|   __/|____/\____/|__|    \___  >__|
+                \/     \/          \/          \/      \/|__|                           \/
+        """)
 
     def train(self):
         self._print_ascii_art()
@@ -39,12 +40,17 @@ class Trainer:
         Config.get().pprint()
         print("============================================================")
 
-        env = BallND() if self._config.task == "ballnd" else Spaceship()
+        if self._config.task == "ballnd":
+            env = BallND()
+        elif self._config.task == "highway":
+            env = Highway()
+        else:
+            env = Spaceship()
 
         if self._config.use_safety_layer:
             safety_layer = SafetyLayer(env)
             safety_layer.train()
-        
+
         observation_dim = (seq(env.observation_space.spaces.values())
                             .map(lambda x: x.shape[0])
                             .sum())
