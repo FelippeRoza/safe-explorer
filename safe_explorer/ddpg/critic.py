@@ -1,5 +1,5 @@
 import torch
-from torch.nn import Linear, Module
+from torch.nn import Linear, Module, Flatten
 import torch.nn.functional as F
 
 from safe_explorer.core.config import Config
@@ -26,6 +26,7 @@ class Critic(Module):
                           None)
 
     def forward(self, observation, action):
+        observation = Flatten(observation)
         observation_ = F.relu(self._observation_linear(observation))
         action_ = F.relu(self._action_linear(action))
         return self._model(torch.cat([observation_, action_], dim=1))

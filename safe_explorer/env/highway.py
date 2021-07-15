@@ -29,6 +29,7 @@ class Highway(highway_env.highway_env.envs.HighwayEnv):
             },
             "lanes_count": 2,
             "vehicles_count": 50,
+            "policy_frequency": 10,
         })
         return config
 
@@ -50,5 +51,5 @@ class Highway(highway_env.highway_env.envs.HighwayEnv):
         return 1
 
     def get_constraint_values(self):
-        long_dist_const = self.get_long_distance()
+        long_dist_const = [self.get_long_distance()]
         return np.array(long_dist_const)

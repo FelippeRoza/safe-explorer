@@ -127,11 +127,11 @@ arguments:
           - name: "max_episode_length"
             default: 300
           - name: "steps_per_epoch"
-            default: 6000
+            default: 1024
           - name: "epochs"
-            default: 25
+            default: 1
           - name: "evaluation_steps"
-            default: 1500
+            default: 500
           - name: "replay_buffer_size"
             default: 1000000
           - name: "use_gpu"
@@ -147,4 +147,4 @@ arguments:
           - name: "task"
             default: "ballnd"
           - name: "use_safety_layer"
-            default: true
+            default: false

@@ -47,8 +47,10 @@ class SafetyLayer:
         for_each(lambda x: x.train(), self._models)
 
     def _initialize_constraint_models(self):
-
-        self._models = [ConstraintModel(self._env.observation_space.shape[0],
+        # self._models = [ConstraintModel(self._env.observation_space.shape[0] * self._env.observation_space.shape[1],
+        #                                 self._env.action_space.shape[0]) \
+        #                 for _ in range(self._num_constraints)]
+        self._models = [ConstraintModel(self._env.observation_space,
                                         self._env.action_space.shape[0]) \
                         for _ in range(self._num_constraints)]
         self._optimizers = [Adam(x.parameters(), lr=self._config.lr) for x in self._models]
@@ -63,7 +65,7 @@ class SafetyLayer:
             action[1] = 0.0
             c = self._env.get_constraint_values()
             observation_next, _, done, _ = self._env.step(action)
-            # self._env.render()
+
             c_next = self._env.get_constraint_values()
 
             self._replay_buffer.add({

@@ -51,14 +51,16 @@ class Trainer:
             safety_layer = SafetyLayer(env)
             safety_layer.train()
 
-        observation_dim = (seq(env.observation_space.spaces.values())
-                            .map(lambda x: x.shape[0])
-                            .sum())
+        # observation_dim = (seq(env.observation_space.spaces.values())
+        #                     .map(lambda x: x.shape[0])
+        #                     .sum())
+
+        observation_dim = env.observation_space.shape[0] * env.observation_space.shape[1]
 
         actor = Actor(observation_dim, env.action_space.shape[0])
         critic = Critic(observation_dim, env.action_space.shape[0])
 
-        safe_action_func = safety_layer.get_safe_action if safety_layer else None
+        safe_action_func = safety_layer.get_safe_action if self._config.use_safety_layer else None
         ddpg = DDPG(env, actor, critic, safe_action_func)
 
         ddpg.train()
